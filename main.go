@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/jackc/pgx/v5"
 	"io"
 	"math/rand"
 	"net/http"
+	"os"
 	"sync"
 )
 
@@ -76,6 +79,21 @@ func getPaymentsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	urlExample := "postgres://admin:admin@localhost:5432/testapidb"
+	//os.Getenv("DATABASE_URL")
+	ctx := context.Background()
+	conn, err := pgx.Connect(ctx, urlExample)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
+	}
+	defer conn.Close(ctx)
+
+	if err := conn.Ping(ctx); err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to ping database: %v\n", err)
+		panic(err)
+	}
+
 	http.HandleFunc("/pay", payHandler)
 	http.HandleFunc("/get-pay", getPaymentsHandler)
 	fmt.Println("Server starting")
